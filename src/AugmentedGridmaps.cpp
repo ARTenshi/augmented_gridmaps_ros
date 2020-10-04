@@ -8,13 +8,18 @@ AugmentedGridMap::AugmentedGridMap(ros::NodeHandle &nodeHandle)
   mapSubscriber = nodeHandle_.subscribe("map",1,&AugmentedGridMap::saveMap,this);
   pointSubscriber = nodeHandle_.subscribe("point_obstacle",1,&AugmentedGridMap::addPointCallback,this);
   // Latched publisher for data
-  augmented_map_pub = nodeHandle.advertise<nav_msgs::OccupancyGrid>("augmented_map", 1, true);
+  augmented_map_pub = nodeHandle_.advertise<nav_msgs::OccupancyGrid>("augmented_map", 1, true);
   augmented_map_pub.publish( enhanced_map );
   
-  augmented_metadata_pub = nodeHandle.advertise<nav_msgs::MapMetaData>("augmented_map_metadata", 1, true);
+  augmented_metadata_pub = nodeHandle_.advertise<nav_msgs::MapMetaData>("augmented_map_metadata", 1, true);
   augmented_metadata_pub.publish( map_metadata );
 
-  nodeHandle_.param<float>("obstacle_radius",obstacle_radius,0.05);
+  obstacle_marker_pub = nodeHandle_.advertise<visualization_msgs::Marker>("obstacle_markers",1,true);
+
+  //Private nodehandle only for parameters
+  ros::NodeHandle private_nh("~"); 
+  private_nh.param<float>("obstacle_radius",obstacle_radius,0.05);
+  private_nh.param<bool>("debug",debug,false);
   ROS_INFO("Map enhancer node Initialization finished");
   return;
 }
@@ -84,7 +89,6 @@ void AugmentedGridMap::addObstacleToMap(geometry_msgs::PointStamped added_point)
   int cell_x = (x_coord - x_orig )/resolution;
   int cell_y = (y_coord - y_orig )/resolution;
  
-  std::cout<<"Cell:[" << cell_x << "," << cell_y <<"]\n";
  
   if ( (cell_x > map_metadata.width ) || (cell_x < 0))
   {
@@ -121,9 +125,15 @@ void AugmentedGridMap::addObstacleToMap(geometry_msgs::PointStamped added_point)
   {
     max_y = map_metadata.height;
   }
+  
+  if (debug)
+  {
+    std::cout<<"Point cell:[" << cell_x << "," << cell_y <<"]\n";
+    std::cout<<"Obstacle size: \n"; 
+    std::cout<<"Max: [" << max_x << "," << max_y <<"]\n";
+    std::cout<<"Min: [" << min_x << "," << min_y <<"]\n";
+  }
 
-  std::cout<<"Max:[" << max_x << "," << max_y <<"]\n";
-  std::cout<<"Min:[" << min_x << "," << min_y <<"]\n";
   for (int i = min_x; i < max_x ; i++)
   {
     for (int j = min_y; j < max_y ; j++)
@@ -131,11 +141,42 @@ void AugmentedGridMap::addObstacleToMap(geometry_msgs::PointStamped added_point)
       enhanced_map.data[i+j*map_metadata.width] = 100;
     }
   }
+
+  makeObstaclesMarkers();
   
   return;
 
 }
 
+void AugmentedGridMap::makeObstaclesMarkers()
+{
+  visualization_msgs::Marker obstacles_markers;
+  
+  std_msgs::ColorRGBA color;
+  color.r=1.0;
+  color.g=0;
+  color.b=0;
+  color.a=1.0;
+
+  obstacles_markers.ns = "obstacles";
+  obstacles_markers.action = visualization_msgs::Marker::ADD;
+  obstacles_markers.header.frame_id = enhanced_map.header.frame_id;
+  obstacles_markers.header.stamp = ros::Time();
+  obstacles_markers.type = visualization_msgs::Marker::SPHERE_LIST;
+  obstacles_markers.pose.orientation.w = 1.0;
+  //should be obstacle_radius *2 but i like being able to see under it
+  obstacles_markers.scale.x = obstacle_radius;
+  obstacles_markers.scale.y = obstacle_radius;
+  obstacles_markers.scale.z = obstacle_radius;
+  obstacles_markers.id = 0;
+  obstacles_markers.color = color;
+
+  obstacles_markers.points = obstacles;
+
+  obstacle_marker_pub.publish(obstacles_markers);
+
+  
+}
 
 }
 

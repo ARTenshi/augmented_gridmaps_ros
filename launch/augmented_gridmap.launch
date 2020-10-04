@@ -6,6 +6,7 @@
 
   <node name="map_enhancer" pkg="augmented_gridmaps" type="augmented_gridmaps_node" output="screen">
     <remap from="point_obstacle" to="/clicked_point"/>
+    <param name="obstacle_radius" type="double" value="0.1"/>
   </node>
 
 </launch>
