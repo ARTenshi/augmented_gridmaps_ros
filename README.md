@@ -9,10 +9,10 @@ it at run-time. In occassions it would be helpful to modify occupancy grids for
 the long run, for example if an unmapped obstacle has appeared on run-time. 
 
 This small package was created to solve that issue, it allows to add, or
-augment obstacles to the map with obstacles on runtime and re-publish for the
-enhanced to the rest of interested nodes. This can be helpfull when these new
-obstacles are not gonna leave the robot workspace and you want you planner to
-avoid trying to get through them
+augment the map with obstacles on runtime and republished this enhanced map to
+the rest of subscribed nodes. This can be helpfull when these new obstacles are
+not gonna leave the robot workspace and you want you planner to avoid trying to
+get through them.
 
 ## Dependencies
 
@@ -20,6 +20,12 @@ This package was created with simplicity in mind. It only depends on core ROS
 libraries and messages so as long as you have a working ROS install it should
 work.  This should also be quite compatible between ros versions, but was only
 tested on ros-melodic.
+
+## Installation
+
+This should be pretty simple. Download repo to your catking workspace and run
+either catkin or catkin_make. As long as you have a base ROS install it should
+compile.
 
 ##  Usage
 
@@ -42,15 +48,50 @@ button on rviz to dynamically add obstacles to the map.
 
 ## Nodes
 
-TODO
+### augmented_gridmap_node
 
-### augmented_gridmaps_node.
+Single entry point for the package, setups the enhanced map  which 
+contains the original map plus added obstacles.
 
-Topics
+#### Subscribed Topics
 
-Parameters
+- map (nav_msgs::OccupancyGrid) 
 
+    Original map to be augmented dynamically
 
+- point_obstacle (geometry_msgs::PointStamped)
+
+    Obstacle location as a point, radius is determined via parameters.  Code
+internally checks it is on same frame as map but won't convert it itself
+
+#### Published Topics 
+
+- augmented_map (nav_msgs::OccupancyGrid)
+
+    Map with augmented obstacles, latched.
+
+- augmented_map_metadata (nav_msgs::MapMetadata)
+
+    Header info for map, for now it is the same as the original map
+    But with different timestamp
+
+- obstacle_markers (visualization_msgs::Marker)
+  
+    Visualization messages this displays obstacles as a small sphere
+    on RVIZ
+
+#### Services
+
+- clear_map (std_srvs::Empty)
+    
+    Removes all markers and osbtacles from the map and returns it 
+    to original state
+
+#### Parameters
+
+- ~radius (float, default: 0.05)
+
+    Radius size for obstacle in meters                     
 
 
 
