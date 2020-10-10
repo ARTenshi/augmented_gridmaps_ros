@@ -16,6 +16,8 @@ AugmentedGridMap::AugmentedGridMap(ros::NodeHandle &nodeHandle)
 
   obstacle_marker_pub = nodeHandle_.advertise<visualization_msgs::Marker>("obstacle_markers",1,true);
 
+  //Service to clear augmented map
+  clearServer = nodeHandle_.advertiseService("clear_map",&AugmentedGridMap::clearMapCallback,this);
   //Private nodehandle only for parameters
   ros::NodeHandle private_nh("~"); 
   private_nh.param<float>("obstacle_radius",obstacle_radius,0.05);
@@ -146,6 +148,22 @@ void AugmentedGridMap::addObstacleToMap(geometry_msgs::PointStamped added_point)
   
   return;
 
+}
+
+bool AugmentedGridMap::clearMapCallback(std_srvs::Empty::Request& request, 
+    std_srvs::Empty::Response& response)
+{
+  // Copy original map over enhanced one and remove obstacles
+  enhanced_map = original_map;
+  obstacles.clear();
+  
+  // Publish again
+  ROS_INFO("Restoring original map");
+  augmented_map_pub.publish( enhanced_map );
+  augmented_metadata_pub.publish( map_metadata );
+  makeObstaclesMarkers();
+  
+  return true;
 }
 
 void AugmentedGridMap::makeObstaclesMarkers()
