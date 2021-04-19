@@ -18,6 +18,10 @@ AugmentedGridMap::AugmentedGridMap(ros::NodeHandle &nodeHandle)
 
   //Service to clear augmented map
   clearServer = nodeHandle_.advertiseService("clear_map",&AugmentedGridMap::clearMapCallback,this);
+
+  //Service to publish current augmented map
+  getAugmentedMap = nodeHandle_.advertiseService("get_augmented_map",&AugmentedGridMap::getAugmentedMapCallback,this);
+
   //Private nodehandle only for parameters
   ros::NodeHandle private_nh("~"); 
   private_nh.param<float>("obstacle_radius",obstacle_radius,0.05);
@@ -40,7 +44,7 @@ void AugmentedGridMap::saveMap(const nav_msgs::OccupancyGrid &map)
   enhanced_map.data = map.data;
   enhanced_map.info = map.info;
   enhanced_map.header.frame_id = map.header.frame_id;
-  enhanced_map.header.stamp = ros::Time();;
+  enhanced_map.header.stamp = ros::Time();
  
   map_metadata = map.info; 
   
@@ -163,6 +167,20 @@ bool AugmentedGridMap::clearMapCallback(std_srvs::Empty::Request& request,
   augmented_metadata_pub.publish( map_metadata );
   makeObstaclesMarkers();
   
+  return true;
+}
+
+bool AugmentedGridMap::getAugmentedMapCallback(nav_msgs::GetMap::Request& request, 
+    nav_msgs::GetMap::Response& response)
+{
+  // Copy original map over enhanced one and remove obstacles
+  augmented_map_pub.publish( enhanced_map );
+  augmented_metadata_pub.publish( map_metadata );
+
+  // Publish again
+  ROS_INFO("Getting augmented map");
+  response.map = enhanced_map;
+
   return true;
 }
 

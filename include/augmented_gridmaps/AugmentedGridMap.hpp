@@ -5,6 +5,7 @@
 #include "geometry_msgs/PointStamped.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "std_srvs/Empty.h"
+#include "nav_msgs/GetMap.h"
 #include "visualization_msgs/Marker.h"
 
 #include <iostream>
@@ -26,11 +27,14 @@ class AugmentedGridMap
   ros::Publisher obstacle_marker_pub;
   ros::Subscriber obstacleSubscriber;
   ros::ServiceServer clearServer;
+  ros::ServiceServer getAugmentedMap;
   
   void saveMap(const nav_msgs::OccupancyGrid &map);   
   void addPointCallback(const geometry_msgs::PointStamped &punto);   
   bool clearMapCallback(std_srvs::Empty::Request& request,
         std_srvs::Empty::Response& response);
+  bool getAugmentedMapCallback(nav_msgs::GetMap::Request& request,
+        nav_msgs::GetMap::Response& response);
   void addObstacleToMap(geometry_msgs::PointStamped added_point);
   void makeObstaclesMarkers();
 
